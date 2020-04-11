@@ -4,6 +4,7 @@
 """
 
 import os
+import sys
 import glob
 import random
 import time
@@ -12,7 +13,7 @@ import cv2
 
 def read_img(file_list, extension):
     """
-    save image files as np.array in list
+    save image files in list
     """
     img_list = []
     for file_id in file_list:
@@ -29,9 +30,9 @@ def binary(img):
     binary_img = cv2.threshold(gray_img, 1, 1, cv2.THRESH_BINARY)[1]
     return binary_img
 
-def board_manual(board):
+def manual_box(board):
     """
-    draw manual
+    prepare controller manual
     """
     x_0, y_0 = 276, 327
     x_1, y_1 = 242, 357
@@ -47,18 +48,18 @@ def board_manual(board):
     cv2.rectangle(board, (x_4, y_4), (x_4+95, y_4-33), (127, 127, 127), -1)
     cv2.rectangle(board, (x_5, y_5), (x_5+25, y_5-25), (127, 127, 127), -1)
     cv2.rectangle(board, (x_6, y_6), (x_6+25, y_6-25), (127, 127, 127), -1)
-    cv2.putText(board, 'W', (276, 325),
+    cv2.putText(board, "W", (276, 325),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-    cv2.putText(board, 'A S D', (245, 355),
+    cv2.putText(board, "A S D", (245, 355),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-    cv2.putText(board, 'Space', (243, 386),
+    cv2.putText(board, "Space", (243, 386),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    cv2.putText(board, 'Q P', (259, 425),
+    cv2.putText(board, "Q P", (259, 425),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-def board_mino_future():
+def future_mino_box():
     """
-    draw future mino
+    prepare future mino
     """
     minos_frame = np.ones([22, 7, 3], dtype=np.uint8)*225
     minos_frame[1:-1, 1:-1] = np.zeros([20, 5, 3], dtype=np.uint8)
@@ -85,14 +86,14 @@ def ghost_position(x_pos, y_pos, board, board_new, mino):
             y_bottom = i-1
             break
     board_ghost = np.copy(board_new)
-    board_ghost[y_pos+y_bottom:y_pos+mino_h+y_bottom, x_pos:x_pos+mino_w, :] += mino//2
+    board_ghost[y_pos+y_bottom:y_pos+mino_h+y_bottom,
+                x_pos:x_pos+mino_w, :] += mino//2
     return board_ghost
 
 def board_show(board, script):
     """
     draw main board
     """
-    cv2.namedWindow(WIN_NAME, cv2.WINDOW_AUTOSIZE)
     board_height = board.shape[0]
     board_width = board.shape[1]
     board[0, 4:-4] = 0
@@ -106,9 +107,9 @@ def board_show(board, script):
                               fy=magnification,
                               interpolation=cv2.INTER_AREA)
     # FUTURE MINO
-    magnification = 12
+    magnification = 10
     x_pos, y_pos = 240, 0
-    mino_future_frame = board_mino_future()
+    mino_future_frame = future_mino_box()
     mino_future_frame = cv2.resize(mino_future_frame,
                                    dsize=None,
                                    fx=magnification,
@@ -119,29 +120,29 @@ def board_show(board, script):
     board_entire[y_pos:y_pos+mino_future_height,
                  x_pos:x_pos+mino_future_width] = mino_future_frame
     # MANUAL
-    board_manual(board_entire)
+    manual_box(board_entire)
     # SCRIPT
     if script is not None:
         cv2.rectangle(board_entire, (20, 104), (219, 75), (0, 255, 255), -1)
-        cv2.putText(board_entire, script, (35, 100),
+        cv2.putText(board_entire, script, (15, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-    magnification = 2
+    cv2.putText(board_entire, "{} MODE".format(MODE),
+                (315, 15), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
+    cv2.putText(board_entire, "Turn = {}".format(TURN),
+                (315, 30), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
+    cv2.putText(board_entire, "Score = {}".format(SCORE),
+                (315, 45), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
+    magnification = 1.5
     board_entire = cv2.resize(board_entire,
                               dsize=None,
                               fx=magnification,
                               fy=magnification,
                               interpolation=cv2.INTER_AREA)
-    cv2.putText(board_entire, '{} MODE'.format(MODE),
-                (650, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-    cv2.putText(board_entire, 'Turn = {}'.format(TURN),
-                (650, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-    cv2.putText(board_entire, 'Score = {}'.format(SCORE),
-                (650, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     cv2.imshow(WIN_NAME, board_entire)
 
 def key_shift(key, x_pos, y_pos):
     """
-    key control 1
+    key event 1
     """
     if key == 97:
         x_pos += -1
@@ -153,7 +154,7 @@ def key_shift(key, x_pos, y_pos):
 
 def key_rotate(key, mino):
     """
-    key control 2
+    key event 2
     """
     if key == 32:
         mino = np.rot90(mino, k=-1)
@@ -165,77 +166,79 @@ def mino_motion(board, mino):
     """
     move mino
     """
-    cv2.namedWindow(WIN_NAME, cv2.WINDOW_AUTOSIZE)
     x_pos, y_pos = 5, 1 # INITIAL MINO POSITION
-    t_save = round(time.time(), 1) # ORIGIN TIME
+    t_save = round(time.time(), 1) # REFERENCE TIME
     while True:
-        # mino info
+        # MINO INFO
         mino_h = mino.shape[0]
         mino_w = mino.shape[1]
         mino_binary = binary(mino)
-        # current board info
+        # UPDATE BOARD & DRAW MINO
         board_new = np.copy(board)
         board_new[y_pos:y_pos+mino_h, x_pos:x_pos+mino_w, :] += mino
-        # board for check
+        # BOARD FOR CHECK
         board_1_binary = binary(np.copy(board))  # check mino motion
         board_2_binary = binary(np.copy(board))  # check hit bottom
         board_2_binary[y_pos+1:y_pos+mino_h+1, x_pos:x_pos+mino_w] += mino_binary
-        # board for show
+        # DRAW GHOST
         board_ghost = ghost_position(x_pos, y_pos, board, board_new, mino)
+        # SHOW BOARD
         board_show(board_ghost, None)
         key = cv2.waitKey(1)
-        # check free fall
+        # CHECK FREE FALL
         if not np.any(board_2_binary > 1):
-            # if not hit bottom
-            if round(time.time(), 1) - t_save > FALL_SPEED:
-                # timer for free fall
+            # IF NOT HIT BOTTOM
+            if round(time.time(), 1) - t_save > SPEED:
+                # FREE FALL
                 y_pos += 1
-                t_save = round(time.time(), 1) # reset time
-            else:
-                pass
+                # UPDATE REFERENCE TIME
+                t_save = round(time.time(), 1)
         else:
-            # hit bottom
+            # HIT BOTTOM
             return None, board_new
         # KEY EVENT
-        # SHIFT AND DOWN
         if key in (97, 100, 115): # A, S, D
+            # SHIFT AND DOWN
             x_new, y_new = key_shift(key, x_pos, y_pos)
             board_1_binary[y_new:y_new+mino_h, x_new:x_new+mino_w] += mino_binary
             if not np.any(board_1_binary > 1):
-                # if mino does not overlap
+                # CAN MOVE
                 x_pos, y_pos = x_new, y_new
-        # ROTATE
         if key in (32, 119): # SPACE, W
+            # ROTATE
             mino_binary_rot = key_rotate(key, mino_binary)
             mino_rot_h = mino_binary_rot.shape[0]
             mino_rot_w = mino_binary_rot.shape[1]
             if board_1_binary[y_pos:y_pos+mino_rot_h,
                               x_pos:x_pos+mino_rot_w].size == mino_binary_rot.size:
-                # if mino does not overlap
+                # CAN MOVE
                 board_1_binary[y_pos:y_pos+mino_rot_h,
                                x_pos:x_pos+mino_rot_w] += mino_binary_rot
                 if not np.any(board_1_binary > 1):
-                    # if mino does not overlap
+                    # CAN MOVE
                     mino = key_rotate(key, mino)
-        # EXIT
         if key == 27: # Esc
+            # EXIT
             return key, board_new
-        # PAUSE
         if key == 112: # P
-            board_show(board_ghost, 'PAUSE GAME')
-            cv2.waitKey(500)
+            # PAUSE
+            scripts = ("PAUSE GAME", "ENTER SPACE")
+            index = 0
             while True:
-                board_show(board_ghost, 'SPACE KEY')
+                if index%2 == 0:
+                    script_id = 0
+                else:
+                    script_id = 1
+                index += 1
+                board_show(board, scripts[script_id])
                 key = cv2.waitKey(500)
-                # RESTART
                 if key in (32, 112): # Space, P
+                    # RESTART
                     t_save = round(time.time(), 1)
                     break
-                # EXIT
                 if key == 27: # Esc
+                    # EXIT
                     return key, board_new
-                board_show(board_ghost, 'TO RESTART')
-                key = cv2.waitKey(500)
 
 def delete_line(board, score):
     """
@@ -277,68 +280,75 @@ def select_difficulty(mode):
         speed = .01
     return speed
 
-if __name__ == '__main__':
-    # IMPORT BOARD AND TETRIMINO AS A IMAGE FILE
+if __name__ == "__main__":
+    # IMPORT BOARD AND TETRIMINOS
     PATH = os.getcwd()
-    FILE_BOARD = glob.glob(PATH + '\\01_board\\' + '*.*')
-    FILE_MINO = glob.glob(PATH + '\\02_tetrimino\\' + '*.*')
-    BOARD = read_img(FILE_BOARD, '.png')[0]
-    MINO_LIST = read_img(FILE_MINO, '.png')
-    NUM_MINO = len(MINO_LIST)
-
+    BOARD_FILE = glob.glob(PATH + "\\01_board\\" + "*.*")
+    MINO_FILE = glob.glob(PATH + "\\02_tetrimino\\" + "*.*")
+    BOARD = read_img(BOARD_FILE, ".png")[0]
+    MINO_TABLE = read_img(MINO_FILE, ".png")
+    MINO_NUM = len(MINO_TABLE)
     # PREPARE PARAMETERS
-    WIN_NAME = 'GAME WINDOW'
     MODE = "NORMAL"
+    WIN_NAME = "GAME WINDOW"
     TURN = 0
     SCORE = 0
-    FALL_SPEED = select_difficulty(MODE)
-    cv2.namedWindow(WIN_NAME, cv2.WINDOW_AUTOSIZE)
-
-    # PREPARE INITIAL MINO LIST RANDOMLY
+    SPEED = select_difficulty(MODE)
+    # SET INITIAL TETRIMINOS RANDOMLY
     MINOS = []
     for loop in range(5):
-        MINOS.append(MINO_LIST[random.randint(0, NUM_MINO-1)])
-
+        MINOS.append(MINO_TABLE[random.randint(0, MINO_NUM-1)])
     # OPEN WINDOW
+    cv2.namedWindow(WIN_NAME, cv2.WINDOW_AUTOSIZE)
+    SCRIPTS = ("START GAME", "ENTER SPACE")
+    INDEX = 0
     while True:
         MINO_FUTURE = MINOS[TURN:TURN+4]
-        board_show(BOARD, 'SPACE KEY')
+        if INDEX%2 == 0:
+            SCRIPT_ID = 0
+        else:
+            SCRIPT_ID = 1
+        INDEX += 1
+        board_show(BOARD, SCRIPTS[SCRIPT_ID])
         KEY = cv2.waitKey(500)
-        # START
-        if KEY == 32:
+        if KEY == 32: # SPACE
             break
-        board_show(BOARD, 'START GAME')
-        KEY = cv2.waitKey(500)
-        if KEY == 32:
-            break
-
+        if KEY == 27: # Esc
+            board_show(BOARD, "BYE d(^.^)b")
+            cv2.waitKey(500)
+            cv2.destroyAllWindows()
+            sys.exit()
     # GAME START
     while True:
         MINO = MINOS[TURN] # CURRENT MINO
         MINO_FUTURE = MINOS[TURN+1:TURN+5] # FUTURE MINO
-        KEY, BOARD = mino_motion(BOARD, MINO) # DROP MINO
+        KEY, BOARD = mino_motion(BOARD, MINO) # ACTIVATE MINO
         # GAME OVER
         if np.any(BOARD[1, 4:-4, :] != 0):
+            SCRIPTS = ("GAME OVER", r"\(*_*)/Esc")
+            INDEX = 0
             while True:
-                board_show(BOARD, 'GAME OVER')
+                if INDEX%2 == 0:
+                    SCRIPT_ID = 0
+                else:
+                    SCRIPT_ID = 1
+                INDEX += 1
+                board_show(BOARD, SCRIPTS[SCRIPT_ID])
                 KEY = cv2.waitKey(500)
                 if KEY == 27:
-                    board_show(BOARD, 'BYE (^.^)b')
-                    cv2.waitKey(1500)
+                    board_show(BOARD, "BYE d(^.^)b")
+                    cv2.waitKey(500)
                     cv2.destroyAllWindows()
-                    break
-                board_show(BOARD, '(*_*)/Esc')
-                KEY = cv2.waitKey(500)
-            break
+                    sys.exit()
         # EXIT
         if KEY == 27:
-            board_show(BOARD, 'BYE (^.^)b')
-            cv2.waitKey(1500)
+            board_show(BOARD, "BYE d(^.^)b")
+            cv2.waitKey(500)
             cv2.destroyAllWindows()
             break
-        # UPDATA BOARD
+        # UPDATE BOARD
         TURN += 1
         BOARD, SCORE = delete_line(BOARD, SCORE)
-        MINOS.append(MINO_LIST[random.randint(0, len(MINO_LIST)-1)])
+        MINOS.append(MINO_TABLE[random.randint(0, len(MINO_TABLE)-1)])
         board_show(BOARD, None)
         cv2.waitKey(1)
