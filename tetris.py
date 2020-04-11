@@ -149,8 +149,6 @@ def key_shift(key, x_pos, y_pos):
         y_pos += 1
     elif key == 100:
         x_pos += 1
-    else:
-        pass
     return x_pos, y_pos
 
 def key_rotate(key, mino):
@@ -159,10 +157,8 @@ def key_rotate(key, mino):
     """
     if key == 32:
         mino = np.rot90(mino, k=-1)
-    if key == 119:
+    elif key == 119:
         mino = np.rot90(mino, k=1)
-    else:
-        pass
     return mino
 
 def mino_motion(board, mino):
@@ -259,11 +255,11 @@ def delete_line(board, score):
     delete_num = wo_frame_h - wo_frame_new_h
     if delete_num == 1:
         score += 5
-    if delete_num == 2:
+    elif delete_num == 2:
         score += 10
-    if delete_num == 3:
+    elif delete_num == 3:
         score += 20
-    if delete_num == 4:
+    elif delete_num == 4:
         score += 100
     return board, score
 
