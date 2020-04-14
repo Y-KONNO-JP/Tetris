@@ -51,8 +51,7 @@ def future_mino_box():
         d_h = i*5
         mino_height = MINO_FUTURE[i].shape[0]
         mino_width = MINO_FUTURE[i].shape[1]
-        minos_box[2+d_h:2+d_h+mino_height,
-                  2:2+mino_width] += MINO_FUTURE[i]
+        minos_box[2+d_h:2+d_h+mino_height, 2:2+mino_width] += MINO_FUTURE[i]
     return minos_box
 
 def board_show(board, script):
@@ -299,14 +298,13 @@ def mino_motion(board, mino):
         # PAUSE
         elif key == 112: # P
             scripts = ("PAUSE GAME", "ENTER SPACE")
-            index = 0
+            index = 1
             while True:
-                if index%2 == 0:
-                    script_id = 0
+                if index == 1:
+                    index = 0
                 else:
-                    script_id = 1
-                index += 1
-                board_show(BOARD, scripts[script_id])
+                    index = 1
+                board_show(BOARD, scripts[index])
                 key = cv2.waitKey(500)
                 # RESTART
                 if key in (32, 112): # SPACE, P
@@ -321,7 +319,7 @@ def mino_motion(board, mino):
 
 def delete_line(board):
     """
-    DELETE BOTTOM LINES AND COUNT SCORE
+    DELETE FILLED LINES
     """
     global GAIN, SCORE, LINES, STATUS
     board_h = board.shape[0]
@@ -377,15 +375,14 @@ def main():
         loop += 1
     # START SCREEN
     scripts = (" START GAME", "ENTER SPACE")
-    index = 0
+    index = 1
     while True:
         MINO_FUTURE = minos[TURN:TURN+4]
-        if index%2 == 0:
-            script_id = 0
+        if index == 1:
+            index = 0
         else:
-            script_id = 1
-        index += 1
-        board_show(board, scripts[script_id])
+            index = 1
+        board_show(board, scripts[index])
         key = cv2.waitKey(500)
         if key == 32: # SPACE
             break
@@ -395,7 +392,7 @@ def main():
             cv2.destroyAllWindows()
             sys.exit()
     # GAME START
-    STATUS = "START!!"
+    STATUS = "GO!!!!"
     while True:
         mino = minos[TURN] # CURRENT MINO
         MINO_FUTURE = minos[TURN+1:TURN+5] # FUTURE MINO
@@ -403,14 +400,13 @@ def main():
         # GAME OVER
         if np.any(board[1, 4:-4, :] != 0):
             scripts = (" GAME OVER", r" ENTER Esc")
-            index = 0
+            index = 1
             while True:
-                if index%2 == 0:
-                    script_id = 0
+                if index == 1:
+                    index = 0
                 else:
-                    script_id = 1
-                index += 1
-                board_show(board, scripts[script_id])
+                    index = 1
+                board_show(board, scripts[index])
                 key = cv2.waitKey(500)
                 if key == 27:
                     break
