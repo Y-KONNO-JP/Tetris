@@ -1,4 +1,4 @@
-#Tetris
+# Tetris
 
 Tetris implementation in Python.
 
